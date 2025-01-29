@@ -4,7 +4,7 @@ import cv2
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFileDialog
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import Qt, QTimer
-from deepface import DeepFace  # Make sure DeepFace is installed
+from deepface import DeepFace  
 
 
 class AgeEstimationApp(QWidget):
