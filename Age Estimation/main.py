@@ -11,33 +11,24 @@ class AgeEstimationApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Initialize variables
         self.capture = None
         self.timer = QTimer(self)
 
-        # Initialize OpenCV's face detector
         self.face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-
-        # Set up the UI
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle("Age Estimation App")
-        self.setGeometry(100, 100, 1000, 700)  # Larger window size
-
-        # Main layout
+        self.setGeometry(100, 100, 1000, 700)  
         main_layout = QVBoxLayout()
         bottom_layout = QHBoxLayout()
-
-        # Label to display result
         self.result_label = QLabel("Predicted Age: ")
         self.result_label.setStyleSheet("font-size: 18px; color: black;")
         main_layout.addWidget(self.result_label)
 
-        # Image Label for displaying video feed or image
         self.image_label = QLabel(self)
         self.image_label.setAlignment(Qt.AlignCenter)
-        main_layout.addWidget(self.image_label, stretch=7)  # Larger stretch factor for main display
+        main_layout.addWidget(self.image_label, stretch=7)  
 
         # Button: Upload Image
         self.upload_image_button = QPushButton('Upload Image', self)
@@ -51,66 +42,52 @@ class AgeEstimationApp(QWidget):
         self.start_webcam_button.clicked.connect(self.start_webcam)
         bottom_layout.addWidget(self.start_webcam_button)
 
-        # Button: Restart
+
         self.restart_button = QPushButton('Restart', self)
         self.restart_button.setStyleSheet("background-color: red; color: white;")
         self.restart_button.clicked.connect(self.restart_application)
         bottom_layout.addWidget(self.restart_button)
-
-        # Add bottom layout
         main_layout.addLayout(bottom_layout)
-
-        # Set main layout for the window
         self.setLayout(main_layout)
 
-        # Timer for webcam stream
         self.timer.timeout.connect(self.process_webcam_frame)
 
     def upload_image(self):
-        # Open a file dialog to select an image
         image_path, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Image Files (*.png *.jpg *.bmp *.jpeg)")
         if image_path:
             self.process_image(image_path)
 
     def process_image(self, image_path):
-        # Process the uploaded image for face detection and age estimation
         img = cv2.imread(image_path)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-        # Detect faces in the image using Haar cascades
         faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(50, 50))
 
         if len(faces) == 0:
             self.result_label.setText("No face detected.")
             return
 
-        # Initialize the predicted_age to Unknown
+
         predicted_age = "Position yourself well!"
 
         for (x, y, w, h) in faces:
-            # Extract the face for age prediction
+            
             face = img[y:y+h, x:x+w]
 
             try:
-                # Use DeepFace to analyze age within the detected face region
+                
                 analysis = DeepFace.analyze(face, actions=['age'], enforce_detection=False)
-                predicted_age = str(analysis[0]['age'])  # Predicted age as a string
+                predicted_age = str(analysis[0]['age'])  
             except Exception as e:
-                # If there is an error in age prediction, display error message
+                
                 predicted_age = "Error: " + str(e)
-
-            # Draw bounding box around the face and display predicted age
             cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(img, predicted_age, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
-        # Update the UI with the predicted age
+        
         self.result_label.setText(f"Predicted Age: {predicted_age}")
-
-        # Display the image with face detection and age prediction
         self.display_image(img)
-
+        
     def display_image(self, image):
-        # Convert BGR to RGB for displaying in QLabel
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         # Convert the image into a QPixmap
@@ -119,7 +96,6 @@ class AgeEstimationApp(QWidget):
         q_image = QImage(img_rgb.data, width, height, bytes_per_line, QImage.Format_RGB888)
         pixmap = QPixmap.fromImage(q_image)
 
-        # Dynamically scale the pixmap
         self.image_label.setPixmap(pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
     def start_webcam(self):
@@ -129,7 +105,7 @@ class AgeEstimationApp(QWidget):
             self.result_label.setText("Error: Cannot access webcam.")
             return
 
-        self.timer.start(5)  # Process frame every 30 ms
+        self.timer.start(5)  
 
     def process_webcam_frame(self):
         if self.capture:
@@ -137,33 +113,25 @@ class AgeEstimationApp(QWidget):
             if not ret:
                 return
 
-            # Convert frame to grayscale for face detection
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             faces = self.face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(50, 50))
 
-            # Initialize the predicted_age variable in case no face is detected
             predicted_age = "Postion yourself well!"
 
             for (x, y, w, h) in faces:
-                # Extract the face for age prediction
                 face = frame[y:y+h, x:x+w]
 
                 try:
-                    # Use DeepFace to analyze age within the detected face region
                     analysis = DeepFace.analyze(face, actions=['age'], enforce_detection=False)
                     predicted_age = str(analysis[0]['age'])
                 except Exception as e:
-                    # If there is an error in age prediction, display error message
                     predicted_age = "Error: " + str(e)
 
-                # Draw bounding box around the face and display predicted age
                 cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
                 cv2.putText(frame, predicted_age, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
 
-            # Update the UI with the predicted age
+        
             self.result_label.setText(f"Predicted Age: {predicted_age}")
-
-            # Display the webcam feed with face detection and age prediction
             self.display_image(frame)
 
     def restart_application(self):
